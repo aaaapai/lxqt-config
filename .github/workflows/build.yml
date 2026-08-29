@@ -36,17 +36,20 @@ jobs:
           wayland-protocols
 
     - name: Install Qt6
-      run: |
-        python -m pip install aqtinstall
-        python -m aqt install-qt linux desktop 6.6.0 gcc_64 --archives qtbase qtdeclarative qttools qtwayland
+      uses: jurplel/install-qt-action@v4
+      with:
+        version: '6.6.0'
+        host: 'linux'
+        target: 'desktop'
+        arch: 'gcc_64'
+        # 使用 archives 代替 modules，安装必需组件
+        archives: 'qtbase qtdeclarative qttools qtwayland'
 
-    # 设置 ccache
     - name: Setup ccache
       uses: hendrikmuhs/ccache-action@v1.2
       with:
         key: ${{ github.job }}-${{ runner.os }}
 
-    # 配置 CMake，此时 CMAKE_PREFIX_PATH 已由 install-qt-action 自动设置
     - name: Configure CMake
       run: |
         cmake -B build \
@@ -55,6 +58,7 @@ jobs:
           -DCMAKE_C_COMPILER_LAUNCHER=ccache \
           -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
           -DCMAKE_INSTALL_PREFIX=/usr
+        # CMAKE_PREFIX_PATH 已由 install-qt-action 自动设置
 
     - name: Build
       run: |
