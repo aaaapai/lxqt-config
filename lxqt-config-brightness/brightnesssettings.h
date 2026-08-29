@@ -21,17 +21,17 @@
 
 #include <QDialog>
 #include <QTimer>
-#include "xrandrbrightness.h"
+#include <QScopedPointer>
 #include "ui_brightnesssettings.h"
-
 #include <LXQt/lxqtbacklight.h>
+#include "displaybrightnessbackend.h"
 
 class BrightnessSettings: public QDialog
 {
-Q_OBJECT
+    Q_OBJECT
 
 public:
-    BrightnessSettings(QWidget *parent =nullptr);
+    BrightnessSettings(QWidget *parent = nullptr);
     ~BrightnessSettings();
 
     void revertValues();
@@ -47,7 +47,7 @@ public slots:
 private:
     void setBacklightSliderValue(int value);
 
-    XRandrBrightness *mBrightness;
+    QScopedPointer<DisplayBrightnessBackend> mBrightness;
     QList<MonitorInfo> mMonitors;
     QList<MonitorInfo> mMonitorsInitial;
     QTimer mConfirmRequestTimer;
@@ -55,9 +55,6 @@ private:
     LXQt::Backlight *mBacklight;
     int mLastBacklightValue;
     int mInitialBacklightValue;
-
 };
 
-
 #endif
-

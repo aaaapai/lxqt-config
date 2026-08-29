@@ -23,22 +23,22 @@
 
 #include <xcb/xcb.h>
 #include <xcb/randr.h>
-
 #include <QScopedPointer>
 #include <QList>
-
 #include "monitorinfo.h"
+#include "displaybrightnessbackend.h"
 
 template <typename T> using ScopedCPointer = QScopedPointer<T, QScopedPointerPodDeleter>;
 
-class XRandrBrightness
+class XRandrBrightness : public DisplayBrightnessBackend
 {
 public:
     XRandrBrightness();
     ~XRandrBrightness() = default;
 
-    QList<MonitorInfo> getMonitorsInfo();
-    void setMonitorsSettings(QList<MonitorInfo> monitors);
+    QList<MonitorInfo> getMonitorsInfo() override;
+    void setMonitorsSettings(const QList<MonitorInfo> &monitors) override;
+    bool isAvailable() const override { return m_resources != nullptr; }
 
 private:
     bool backlight_get_with_range(xcb_randr_output_t output, long &value, long &min, long &max) const;
@@ -49,8 +49,6 @@ private:
 
     xcb_atom_t m_backlight = XCB_ATOM_NONE;
     ScopedCPointer<xcb_randr_get_screen_resources_current_reply_t> m_resources;
-
 };
 
-#endif // XRANDRBRIGHTNESS_H
-
+#endif

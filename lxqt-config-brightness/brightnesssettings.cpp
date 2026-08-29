@@ -18,25 +18,38 @@
 
 #include "brightnesssettings.h"
 #include "outputwidget.h"
+#include "xrandrbrightness.h"
+#include "waylandbrightness.h"
 #include <QMessageBox>
 #include <QPushButton>
+#include <QGuiApplication>
+#include <QLabel>
 
 #include <cmath>
 #include <algorithm>
 
-BrightnessSettings::BrightnessSettings(QWidget *parent):QDialog(parent)
+BrightnessSettings::BrightnessSettings(QWidget *parent) : QDialog(parent)
 {
     ui = new Ui::BrightnessSettings();
     ui->setupUi(this);
 
-    mBrightness = new XRandrBrightness();
-    mMonitors = mBrightness->getMonitorsInfo();
-    mMonitorsInitial = mBrightness->getMonitorsInfo();
-    mBacklight = new LXQt::Backlight(this);
+    // 根据显示服务器选择后端
+    QString platform = QGuiApplication::platformName();
+    if (platform == QStringLiteral("xcb")) {
+        mBrightness.reset(new XRandrBrightness());
+    } else if (platform == QStringLiteral("wayland")) {
+        mBrightness.reset(new WaylandBrightness());
+    } else {
+        QLabel* notice = new QLabel(tr("Unsupported display server"));
+        ui->layout->addWidget(notice, 0, Qt::AlignCenter);
+        notice->show();
+        ui->brightnessGroupBox->setEnabled(false);
+    }
 
     ui->headIconLabel->setPixmap(QIcon::fromTheme(QStringLiteral("video-display-brightness"),
                                  QIcon::fromTheme(QStringLiteral("video-display"))).pixmap(32, 32));
 
+    mBacklight = new LXQt::Backlight(this);
     ui->backlightSlider->setEnabled(mBacklight->isBacklightAvailable() || mBacklight->isBacklightOff());
     ui->backlightGroupBox->setEnabled(mBacklight->isBacklightAvailable() || mBacklight->isBacklightOff());
     if(mBacklight->isBacklightAvailable()) {
@@ -51,19 +64,22 @@ BrightnessSettings::BrightnessSettings(QWidget *parent):QDialog(parent)
             [this](bool){ ui->backlightSlider->setValue(ui->backlightSlider->value()+1); });
     }
 
-    if (QGuiApplication::platformName() != QStringLiteral("xcb")) {
-        QLabel* notice = new QLabel(tr("Currently unsupported under Wayland"));
-        ui->layout->addWidget(notice, 0, Qt::AlignCenter);
-        notice->show();
-        ui->brightnessGroupBox->setEnabled(false);
-    }
-    else {
-        for(const MonitorInfo &monitor: std::as_const(mMonitors)) {
+    if (mBrightness && mBrightness->isAvailable()) {
+        mMonitors = mBrightness->getMonitorsInfo();
+        mMonitorsInitial = mMonitors;
+        for(const MonitorInfo &monitor : std::as_const(mMonitors)) {
             OutputWidget *output = new OutputWidget(monitor, this);
             ui->layout->addWidget(output);
             output->show();
             connect(output, &OutputWidget::changed, this, &BrightnessSettings::monitorSettingsChanged);
             connect(this, &BrightnessSettings::monitorReverted, output, &OutputWidget::setRevertedValues);
+        }
+    } else {
+        ui->brightnessGroupBox->setEnabled(false);
+        if (mBrightness) {
+            QLabel* notice = new QLabel(tr("No compatible backend found for this display server"));
+            ui->layout->addWidget(notice, 0, Qt::AlignCenter);
+            notice->show();
         }
     }
 
@@ -82,10 +98,6 @@ BrightnessSettings::BrightnessSettings(QWidget *parent):QDialog(parent)
 BrightnessSettings::~BrightnessSettings()
 {
     delete ui;
-    ui = nullptr;
-
-    delete mBrightness;
-    mBrightness = nullptr;
 }
 
 void BrightnessSettings::setBacklight()
@@ -105,6 +117,8 @@ void BrightnessSettings::setBacklight()
 
 void BrightnessSettings::monitorSettingsChanged(MonitorInfo monitor)
 {
+    if (!mBrightness)
+        return;
     mBrightness->setMonitorsSettings(QList<MonitorInfo>{} << monitor);
     if (ui->confirmCB->isChecked())
         mConfirmRequestTimer.start();
@@ -153,7 +167,8 @@ void BrightnessSettings::requestConfirmation()
         if(mBacklight->isBacklightAvailable())
             mLastBacklightValue = mBacklight->getBacklight();
 
-        mMonitors = mBrightness->getMonitorsInfo();
+        if (mBrightness)
+            mMonitors = mBrightness->getMonitorsInfo();
     } else
     {
         // revert the changes
@@ -164,9 +179,11 @@ void BrightnessSettings::requestConfirmation()
             connect(ui->backlightSlider, &QSlider::valueChanged, this, &BrightnessSettings::setBacklight);
         }
 
-        mBrightness->setMonitorsSettings(mMonitors);
-        for (const auto & monitor : std::as_const(mMonitors))
-            emit monitorReverted(monitor);
+        if (mBrightness) {
+            mBrightness->setMonitorsSettings(mMonitors);
+            for (const auto & monitor : std::as_const(mMonitors))
+                emit monitorReverted(monitor);
+        }
     }
 }
 
@@ -179,11 +196,12 @@ void BrightnessSettings::revertValues()
         connect(ui->backlightSlider, &QSlider::valueChanged, this, &BrightnessSettings::setBacklight);
     }
 
-    mBrightness->setMonitorsSettings(mMonitorsInitial);
-    for (const auto & monitor : std::as_const(mMonitorsInitial))
-            emit monitorReverted(monitor);
+    if (mBrightness) {
+        mBrightness->setMonitorsSettings(mMonitorsInitial);
+        for (const auto & monitor : std::as_const(mMonitorsInitial))
+                emit monitorReverted(monitor);
+    }
 }
-
 
 void BrightnessSettings::setBacklightSliderValue(int value)
 {

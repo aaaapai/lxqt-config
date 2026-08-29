@@ -3,6 +3,8 @@ find_package(XCB REQUIRED COMPONENTS XCB RANDR)
 set(H_FILES
     brightnesswatcher.h
     brightnesssettings.h
+    displaybrightnessbackend.h
+    waylandbrightness.h
     xrandrbrightness.h
     monitorinfo.h
     outputwidget.h
@@ -13,6 +15,7 @@ set(CPP_FILES
     brightnesswatcher.cpp
     brightnesssettings.cpp
     xrandrbrightness.cpp
+    waylandbrightness.cpp
     monitorinfo.cpp
     outputwidget.cpp
 )
