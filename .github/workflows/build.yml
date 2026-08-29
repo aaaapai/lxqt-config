@@ -18,13 +18,21 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v7
 
-    - name: Install system dependencies
+    # 添加 LXQt 官方 PPA 以获取 2.4.0+ 版本
+    - name: Add LXQt PPA
       run: |
         sudo apt-get update
+        sudo apt-get install -y software-properties-common
+        sudo add-apt-repository -y ppa:lxqt/lxqt
+        sudo apt-get update
+
+    - name: Install system dependencies
+      run: |
         sudo apt-get install -y \
           cmake \
           g++ \
-          liblxqt1-dev \
+          liblxqt-dev \
+          liblxqt-menu-data-dev \
           libkf5windowsystem-dev \
           libkf5wayland-dev \
           libxcb-randr0-dev \
@@ -42,7 +50,6 @@ jobs:
         host: 'linux'
         target: 'desktop'
         arch: 'gcc_64'
-        # 使用 archives 代替 modules，安装必需组件
         archives: 'qtbase qtdeclarative qttools qtwayland'
 
     - name: Setup ccache
