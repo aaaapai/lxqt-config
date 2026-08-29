@@ -18,30 +18,42 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v7
 
-    - name: Install dependencies
+    - name: Install system dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y \
           cmake \
           g++ \
           liblxqt1-dev \
-          libqt5x11extras5-dev \
           libkf5windowsystem-dev \
           libkf5wayland-dev \
           libxcb-randr0-dev \
           libxcb-util0-dev \
           libgl1-mesa-dev \
           extra-cmake-modules \
-          clang \
           ninja-build \
           libwayland-dev \
           wayland-protocols
 
+    # 使用 Qt 官方 Action 安装 Qt6 6.6.0（或更高版本）
+    - name: Install Qt6
+      uses: jurplel/install-qt-action@v4
+      with:
+        version: '6.6.0'
+        host: 'linux'
+        target: 'desktop'
+        arch: 'gcc_64'
+        modules: 'qtbase qtdeclarative qttools qtwayland'
+        # 可选：如果需要 QtDBus，qtbase 已包含，但确保 libQt6DBus 存在
+        # 若需要额外模块，可添加 'qtdbus'，但 qtbase 已包含
+
+    # 设置 ccache
     - name: Setup ccache
       uses: hendrikmuhs/ccache-action@v1.2
       with:
         key: ${{ github.job }}-${{ runner.os }}
 
+    # 配置 CMake，此时 CMAKE_PREFIX_PATH 已由 install-qt-action 自动设置
     - name: Configure CMake
       run: |
         cmake -B build \
