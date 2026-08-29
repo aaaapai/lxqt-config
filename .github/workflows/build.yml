@@ -36,13 +36,9 @@ jobs:
           wayland-protocols
 
     - name: Install Qt6
-      uses: jurplel/install-qt-action@master
-      with:
-         version: '6.8.3'
-         host: 'linux'
-         target: 'desktop'
-         arch: 'gcc_64'
-         archives: 'qtbase qtdeclarative qttools qtwayland'
+      run: |
+        python -m pip install aqtinstall
+        python -m aqt install-qt linux desktop 6.6.0 gcc_64 --archives qtbase qtdeclarative qttools qtwayland
 
     # 设置 ccache
     - name: Setup ccache
