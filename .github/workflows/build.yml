@@ -35,17 +35,14 @@ jobs:
           libwayland-dev \
           wayland-protocols
 
-    # 使用 Qt 官方 Action 安装 Qt6 6.6.0（或更高版本）
     - name: Install Qt6
-      uses: jurplel/install-qt-action@v4
+      uses: jurplel/install-qt-action@master
       with:
-        version: '6.6.0'
-        host: 'linux'
-        target: 'desktop'
-        arch: 'gcc_64'
-        modules: 'qtbase qtdeclarative qttools qtwayland'
-        # 可选：如果需要 QtDBus，qtbase 已包含，但确保 libQt6DBus 存在
-        # 若需要额外模块，可添加 'qtdbus'，但 qtbase 已包含
+         version: '6.8.3'
+         host: 'linux'
+         target: 'desktop'
+         arch: 'gcc_64'
+         archives: 'qtbase qtdeclarative qttools qtwayland'
 
     # 设置 ccache
     - name: Setup ccache
