@@ -25,6 +25,19 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
+set(CMAKE_CXX_STANDARD 23)
+
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -pipe -integrated-as -mllvm -polly -mllvm -polly-vectorizer=stripmine -mllvm -polly-invariant-load-hoisting -mllvm -polly-run-inliner -mllvm -polly-run-dce -mllvm -polly-invariant-load-hoisting -flto -mllvm -polly-run-inliner -mllvm -polly-run-dce -fdata-sections -ffunction-sections -mllvm -polly-detect-keep-going -mllvm -polly-ast-use-context -fvisibility=hidden -Wall -Wextra -ferror-limit=0 -Wno-return-type -Wno-unused-parameter -Wno-c++98-compat -Wno-c++98-compat-pedantic -DGLM_FORCE_INTRINSICS -Wno-unicode-whitespace -Wno-format -Wno-unused-function -fmerge-all-constants -D_FILE_OFFSET_BITS=64 -mllvm -inlinehint-threshold=100000 -D_GNU_SOURCE -D__USE_GNU")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -pipe -integrated-as -mllvm -polly -mllvm -polly-vectorizer=stripmine -mllvm -polly-invariant-load-hoisting -mllvm -polly-run-inliner -mllvm -polly-run-dce -mllvm -polly-invariant-load-hoisting -flto -mllvm -polly-run-inliner -mllvm -polly-run-dce -fdata-sections -ffunction-sections -mllvm -polly-detect-keep-going -mllvm -polly-ast-use-context -fvisibility=hidden -Wall -Wextra -ferror-limit=0 -Wno-return-type -Wno-unused-parameter -Wno-c++98-compat -Wno-c++98-compat-pedantic -DGLM_FORCE_INTRINSICS -Wno-unicode-whitespace -Wno-format -Wno-unused-function -Wno-vla-cxx-extension -frtti -fmerge-all-constants -D_FILE_OFFSET_BITS=64 -mllvm -inlinehint-threshold=100000 -D_GNU_SOURCE -D__USE_GNU")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fuse-ld=lld -flto -O3 -Wl,--strip-all -fvisibility=hidden -Wl,-O3 -Wl,--gc-sections -Wl,--as-needed -Wl,--exclude-libs,ALL -Wl,--lto-O3")
+
 set(KF6_MINIMUM_VERSION "6.0.0")
 set(KF6SCREEN_MINIMUM_VERSION "6.0.0")
 set(LXQT_MINIMUM_VERSION "2.4.0")
