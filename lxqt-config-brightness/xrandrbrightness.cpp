@@ -371,7 +371,7 @@ QList<MonitorInfo> XRandrBrightness::getMonitorsInfo()
     return monitors;
 }
 
-void XRandrBrightness::setMonitorsSettings(QList<MonitorInfo> monitors)
+void XRandrBrightness::setMonitorsSettings(const QList<MonitorInfo> &monitors)
 {
     if (!m_resources) {
         return;

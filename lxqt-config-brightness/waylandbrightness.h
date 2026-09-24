@@ -2,8 +2,8 @@
 #define WAYLANDBRIGHTNESS_H
 
 #include "displaybrightnessbackend.h"
-#include <QProcess>
 #include <QMap>
+#include <QString>
 
 class WaylandBrightness : public DisplayBrightnessBackend
 {
@@ -16,10 +16,11 @@ public:
     bool isAvailable() const override;
 
 private:
-    bool checkWlrRandrAvailable() const;
+    bool checkWlGammaCtlAvailable() const;
     QList<MonitorInfo> parseWlrRandrOutput(const QByteArray &output);
-    void runWlrRandr(const QStringList &args);
+    void setGammaWithWlGammaCtl(float brightness);
     QMap<QString, float> m_currentBrightness;
+    qint64 m_currentPid = 0;  // 当前运行的 wl-gammactl-rust 进程 PID
 };
 
 #endif

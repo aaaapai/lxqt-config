@@ -17,6 +17,8 @@
 */
 
 #include "xrandrbrightness.h"
+#include "waylandbrightness.h"
+#include "displaybrightnessbackend.h"
 #include "brightnesswatcher.h"
 
 #include <QDebug>
@@ -167,75 +169,51 @@ int main(int argn, char* argv[])
         return app.exec();
     }
 
-    // TUi mode
+    // ---- TUI 模式：强制使用显示器后端（Gamma 亮度），忽略硬件背光 ----
     float sign = (config.decreaseBrightness) ? -1.0f : 1.0f;
-    float brightnessValue = std::clamp(config.brightnessValue, 0.0f, 100.0f) / 100.0f;
+    float brightnessValue = std::clamp(config.brightnessValue, 0.0f, 100.0f) / 100.0f; // 0.0~1.0
 
-    // Checks if backlight driver is available
-    LXQt::Backlight *mBacklight = new LXQt::Backlight(&app);
-    if (mBacklight->isBacklightAvailable() && !config.resetGamma) { // Use backlight driver
-        BrightnessWatcher *brightnessWatcher = new BrightnessWatcher(&app);
-
-        // Qt::QueuedConnection needed. The event loop isn't running, yet.
-        QObject::connect(mBacklight, &LXQt::Backlight::backlightChanged,
-            brightnessWatcher, &BrightnessWatcher::changed, Qt::QueuedConnection);
-
-        if (config.setBrightness)
-            sign = 0.0f;
-
-        const int currentBacklight = mBacklight->getBacklight();
-        const int maxBacklight = mBacklight->getMaxBacklight();
-        int backlight = ( currentBacklight + sign*(maxBacklight/50 + 1) )*std::abs(sign) + brightnessValue*maxBacklight;
-
-        mBacklight->setBacklight(backlight);
-
-        // Timeout for situations where LXQtBacklight::setBacklight() doesn't
-        // produce a changed signal.
-        // QTimer::singleShot() doesn't allow to choose the type of connection.
-        // Qt::QueuedConnection needed. The event loop isn't running, yet.
-        QTimer *timeout = new QTimer(&app);
-        QObject::connect(timeout, &QTimer::timeout, &app, LXQt::SingleApplication::quit, Qt::QueuedConnection);
-        timeout->setSingleShot(true);
-        timeout->setInterval(2000);
-        timeout->start();
-    } else { // Use XRandr driver
-        XRandrBrightness *brightness = new XRandrBrightness();
-        const QList<MonitorInfo> monitors = brightness->getMonitorsInfo();
-        QList<MonitorInfo> monitorsChanged;
-        for(MonitorInfo monitor : monitors)
-        {
-            if(config.resetGamma)
-            {
-                monitor.setBrightness(1.0f);
-                monitorsChanged.append(monitor);
-                continue;
-            }
-
-            if(monitor.isBacklightSupported() )
-            {
-                long backlight = ( monitor.backlight() + sign*(monitor.backlightMax()/50 + 1) )*std::abs(sign) + brightnessValue*monitor.backlightMax();
-                if(backlight<monitor.backlightMax() && backlight>0)
-                {
-                    monitor.setBacklight(backlight);
-                    monitorsChanged.append(monitor);
-                }
-            }
-            else
-            {
-                float brightness = (monitor.brightness() + 0.1f *sign)*std::abs(sign) + brightnessValue * 2.0f;
-                if(brightness < 2.0f && brightness > 0.0f)
-                {
-                    monitor.setBrightness(brightness);
-                    monitorsChanged.append(monitor);
-                }
-            }
-        }
-        brightness->setMonitorsSettings(monitorsChanged);
-        delete brightness;
-        return 0;
+    // 不再检查背光，直接使用显示器后端（XRandr 或 Wayland）
+    DisplayBrightnessBackend *brightness = nullptr;
+    if (QGuiApplication::platformName() == QStringLiteral("wayland")) {
+        brightness = new WaylandBrightness();
+    } else {
+        brightness = new XRandrBrightness();
     }
 
-    // We need to start the event loop. Otherwise the signal/slot mechanism
-    // won't work.
-    return app.exec();
+    const QList<MonitorInfo> monitors = brightness->getMonitorsInfo();
+    QList<MonitorInfo> monitorsChanged;
+
+    if (config.resetGamma) {
+        for (const MonitorInfo &monitor : monitors) {
+            MonitorInfo m = monitor;
+            m.setBrightness(1.0f);
+            monitorsChanged.append(m);
+        }
+    } else {
+        for (const MonitorInfo &monitor : monitors) {
+            MonitorInfo m = monitor;
+            // 调整计算：使结果在 0.0 ~ 1.0 范围内
+            float current = m.brightness(); // 当前亮度，范围 0.0~1.0
+            // 根据 increase/decrease 或 set 调整
+            float newBrightness;
+            if (config.setBrightness) {
+                // 直接使用 brightnessValue（0~1）
+                newBrightness = brightnessValue;
+            } else {
+                // increase/decrease: 每次调整 0.05（5%）
+                float step = 0.05f * sign;
+                newBrightness = current + step;
+            }
+            // 限制范围
+            newBrightness = std::clamp(newBrightness, 0.0f, 1.0f);
+            m.setBrightness(newBrightness);
+            monitorsChanged.append(m);
+        }
+    }
+
+    brightness->setMonitorsSettings(monitorsChanged);
+    delete brightness;
+
+    return 0;
 }
