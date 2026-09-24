@@ -39,9 +39,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -pipe -integrated-as -mllvm -polly -
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fuse-ld=lld -flto -O3 -Wl,--strip-all -fvisibility=hidden -Wl,-O3 -Wl,--gc-sections -Wl,--as-needed -Wl,--exclude-libs,ALL -Wl,--lto-O3")
 
 set(KF6_MINIMUM_VERSION "6.0.0")
-set(KF6SCREEN_MINIMUM_VERSION "6.0.0")
+set(KF6SCREEN_MINIMUM_VERSION "6.6.0")
 set(LXQT_MINIMUM_VERSION "2.4.0")
-set(QT_MINIMUM_VERSION "6.6.0")
+set(QT_MINIMUM_VERSION "6.10.0")
 
 find_package(Qt6DBus ${QT_MINIMUM_VERSION} REQUIRED)
 find_package(Qt6LinguistTools ${QT_MINIMUM_VERSION} REQUIRED)
